@@ -4,6 +4,7 @@
 required_credentials:
   # List of credential names used by tasks in the project
   - warehouse
+  - gsheets
 
 # Credential used by sql and autosql tasks
 default_db: warehouse
