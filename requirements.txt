@@ -1,0 +1,3 @@
+sayn
+sqlalchemy-bigquery
+beautifulsoup4
