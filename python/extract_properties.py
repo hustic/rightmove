@@ -16,11 +16,13 @@ class propertyURL(TypedDict):
     location_id: str
 
 
-@task(outputs="raw.property_links")
+@task(sources="raw.rightmove_locations", outputs="raw.property_links")
 def extract_property_links(context: Task, warehouse: Database):
+    src_table = context.src("raw.rightmove_locations")
     locations = warehouse.read_data(
-        "SELECT * FROM add table here"
-    )  # TODO: Fill this in
+        f"SELECT * FROM {src_table}"
+    )  
+   
     property_links: List[propertyURL] = []
     for location in locations:
         params = {
@@ -40,12 +42,12 @@ def extract_property_links(context: Task, warehouse: Database):
 
                     soup = BeautifulSoup(response.text, "html.parser")
                     links = soup.select(".propertyCard-link")
-
+                    links = list(set([link['href'] for link in links]))
                     for link in links:
-                        if (href := link["href"]) != "":
+                        if link != "":
                             property_url: propertyURL = {
-                                "property_id": href.split("/")[2],
-                                "property_url": href,
+                                "property_id": link.split("/")[2],
+                                "property_url": link,
                                 "location_id": location["location_id"],
                                 "location_name": location["location_name"],
                             }
@@ -55,4 +57,7 @@ def extract_property_links(context: Task, warehouse: Database):
 
                     params["index"] += 24
 
-        warehouse.load_data("raw.property_links", property_links)
+        
+
+
+    warehouse.load_data("property_links", property_links, schema='rightmove_raw', replace=True)
