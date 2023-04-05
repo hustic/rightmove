@@ -71,8 +71,8 @@ def extract_property_details(context: Task, warehouse: Database):
                 epc_rating["href"] if epc_rating else None
             )
             property_info["deposit"] = property_info["deposit"].replace(",", "")
-            property_info["bedrooms"] = property_info["deposit"].replace("x", "")
-            property_info["bathrooms"] = property_info["deposit"].replace("x", "")
+            property_info["bedrooms"] = property_info["bedrooms"].replace("x", "")
+            property_info["bathrooms"] = property_info["bathrooms"].replace("x", "")
             # print(property_info)
             if property_info["let_available_date"] not in ("Now", "Ask agent"):
                 if (
