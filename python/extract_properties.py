@@ -2,7 +2,7 @@ from typing import TypedDict, List
 from sayn import task
 from sayn.tasks.task import Task
 from sayn.database import Database
-
+from datetime import datetime
 from bs4 import BeautifulSoup
 import httpx
 
@@ -19,11 +19,13 @@ class propertyURL(TypedDict):
 @task(sources="raw.rightmove_locations", outputs="raw.property_links")
 def extract_property_links(context: Task, warehouse: Database):
     src_table = context.src("raw.rightmove_locations")
-    locations = warehouse.read_data(
-        f"SELECT * FROM {src_table}"
-    )  
-   
+    locations = warehouse.read_data(f"SELECT * FROM {src_table}")
+    max_date = warehouse.read_data(
+        "SELECT MAX(date_added) FROM rightmove_raw.property_links"
+    )
     property_links: List[propertyURL] = []
+    today = datetime.today()
+    days_since = (today - max_date).days
     for location in locations:
         params = {
             "searchType": "RENT",
@@ -32,6 +34,7 @@ def extract_property_links(context: Task, warehouse: Database):
             "minBedrooms": 2,
             "includeLetAgreed": "false",
             "index": 0,
+            "maxDaysSinceAdded": max(days_since, 1),
         }
 
         with context.step("Get Propery Links"):
@@ -42,7 +45,7 @@ def extract_property_links(context: Task, warehouse: Database):
 
                     soup = BeautifulSoup(response.text, "html.parser")
                     links = soup.select(".propertyCard-link")
-                    links = list(set([link['href'] for link in links]))
+                    links = list(set([link["href"] for link in links]))
                     for link in links:
                         if link != "":
                             property_url: propertyURL = {
@@ -50,6 +53,7 @@ def extract_property_links(context: Task, warehouse: Database):
                                 "property_url": link,
                                 "location_id": location["location_id"],
                                 "location_name": location["location_name"],
+                                "date_added": today,
                             }
                             property_links.append(property_url)
                         else:
@@ -57,7 +61,4 @@ def extract_property_links(context: Task, warehouse: Database):
 
                     params["index"] += 24
 
-        
-
-
-    warehouse.load_data("property_links", property_links, schema='rightmove_raw', replace=True)
+    warehouse.load_data("property_links", property_links, schema="rightmove_raw")
