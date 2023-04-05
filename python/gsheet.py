@@ -12,13 +12,14 @@ _elt_ts = datetime.datetime.now()
 
 
 @task(outputs="raw.rightmove_locations")
-def extract_gsheet_slack(
+def extract_locations(
     context: Task,
     warehouse: Database,
     gsheets: Mapping[str, Mapping[str, Mapping[str, str]]],
 ):
     with context.step("Config"):
-        gsheet_info = gsheets["sheets"]["rightmove"]
+        # Gsheet information
+        gsheet_info = gsheets["sheets"]['rightmove']
         sheet_id = gsheet_info["id"]
         sheet_name = gsheet_info["sheet_name"]
 
