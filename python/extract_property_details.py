@@ -59,7 +59,7 @@ def extract_property_details(context: Task, warehouse: Database):
 
             property_url = _property["property_url"]
             property_info = template.copy()
-            property_info["property_id"] = property["property_id"]
+            property_info["property_id"] = _property["property_id"]
             property_info["property_url"] = BASE_URL[:-1] + property_url
             property_info["location_name"] = _property["location_name"]
 
@@ -70,6 +70,15 @@ def extract_property_details(context: Task, warehouse: Database):
                 continue
 
             property_soup = BeautifulSoup(property_response.text, "html.parser")
+            rent = property_soup.select_one("div._1gfnqJ3Vtd1z40MlC0MzXu span")
+            if rent:
+                rent_pcm = (
+                    rent.text.replace("£", "")
+                    .replace("pcm", "")
+                    .replace(",", "")
+                    .strip()
+                )
+                property_info["rent_pcm"] = int(rent_pcm)
             rent_pcm = (
                 property_soup.select_one("div._1gfnqJ3Vtd1z40MlC0MzXu span")
                 .text.replace("£", "")
