@@ -16,17 +16,6 @@ def extract_gsheet(
     gsheets: Mapping[str, Mapping[str, Mapping[str, str]]],
 ):
     with context.step("Config"):
-        service_account_info = gsheets["service_account"]
-
-    with context.step("Get data"):
-        src_table = context.src("intermediate.property_details")
-        values = warehouse.read_data(f"SELECT * FROM {src_table}")
-        df_new = pd.DataFrame(values).drop_duplicates(subset="property_id")
-
-    with context.step("Get Gsheets data"):
-        # API connection
-        # Auth
-
         if not (service_account_info := gsheets.get("service_account")):
             credentials, _ = google.auth.default(
                 scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"]
@@ -36,6 +25,15 @@ def extract_gsheet(
                 service_account_info,
                 scopes=("https://www.googleapis.com/auth/spreadsheets",),
             )
+
+    with context.step("Get data"):
+        src_table = context.src("intermediate.property_details")
+        values = warehouse.read_data(f"SELECT * FROM {src_table}")
+        df_new = pd.DataFrame(values).drop_duplicates(subset="property_id")
+
+    with context.step("Get Gsheets data"):
+        # API connection
+        # Auth
 
         gc = gs.authorize(custom_credentials=credentials)
         sh = gc.open_by_key(gsheets["sheets"]["rightmove"]["id"])
