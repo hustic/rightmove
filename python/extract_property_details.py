@@ -30,60 +30,48 @@ template = {
 
 @task(sources="raw.property_links", outputs="raw.property_details")
 def extract_property_details(context: Task, warehouse: Database):
-    """Extract property details from rightmove
-
-    Args:
-        context (Task): Task context
-        warehouse (Database): Database connection
-
+    src_table = context.src("raw.property_links")
+    properties = warehouse.read_data(
+        f"""
+    SELECT *
+      FROM (
+        SELECT *
+             , ROW_NUMBER() OVER (PARTITION BY property_id ORDER BY date_added DESC) AS n
+          FROM {src_table}
+        )
+    WHERE n = 1
     """
+    )
 
-    query = f"""
-        SELECT * FROM {context.src("raw.property_links")}
-        WHERE date_added = (SELECT MAX(date_added) FROM {context.src("raw.property_links")})
-    """
+    # print(properties)
 
-    properties = warehouse.read_data(query=query)
+    p_buckets = int(len(properties) / 50)
+    n_properties = len(properties)
+    context.set_run_steps(
+        [f"Get Property {p * 50} / {n_properties}" for p in range(0, p_buckets + 1)]
+    )
 
-    with context.step("Get Propery Details"):
-        properties_details = []
-        for property in properties:
-            if not isinstance(property, dict):
-                raise Exception("Property not a dict")
-            property_url = property["property_url"]
+    properties_details = []
+    with httpx.Client(base_url=BASE_URL) as client:
+        for idx, _property in enumerate(properties):
+            if (stp := idx % 50) == 0:
+                context.start_step(f"Get Property {idx} / {n_properties}")
+
+            property_url = _property["property_url"]
             property_info = template.copy()
             property_info["property_id"] = property["property_id"]
             property_info["property_url"] = BASE_URL[:-1] + property_url
-            property_info["location_name"] = property["location_name"]
-            try:
-                with httpx.Client(base_url=BASE_URL) as client:
-                    property_response = client.get(property_url)
-                    property_soup = BeautifulSoup(property_response.text, "html.parser")
+            property_info["location_name"] = _property["location_name"]
 
-                rent_pcm = (
-                    property_soup.select_one("div._1gfnqJ3Vtd1z40MlC0MzXu span")
-                    .text.replace("£", "")
-                    .replace("pcm", "")
-                    .replace(",", "")
-                    .strip()
-                )
-            except Exception as e:
-                context.log.error(f"Error scraping property {property_url}")
-                context.log.error(f"Error was: {e}")
-
-            if rent_pcm is None:
-                context.log.error(f"No rent found for property {property_url}")
-                continue
-            if not rent_pcm.isdigit():
-                context.log.error(f"Found non-numeric rent for property {property_url}")
-                continue
-
-            yield {
-                "property_url": property_url,
-                "rent_pcm": int(rent_pcm),
-                "date": datetime.datetime.now(),
-            }
-
+            property_response = client.get(property_url)
+            property_soup = BeautifulSoup(property_response.text, "html.parser")
+            rent_pcm = (
+                property_soup.select_one("div._1gfnqJ3Vtd1z40MlC0MzXu span")
+                .text.replace("£", "")
+                .replace("pcm", "")
+                .replace(",", "")
+                .strip()
+            )
             property_info["rent_pcm"] = int(rent_pcm)
             property_detail = property_soup.select("dl._2E1qBJkWUYMJYHfYJzUb_r div")
             for dl in property_detail:
@@ -103,31 +91,21 @@ def extract_property_details(context: Task, warehouse: Database):
                 epc_rating["href"] if epc_rating else None
             )
             property_info["deposit"] = property_info["deposit"].replace(",", "")
-            # replace Ask agent with None and turn it into an integer
-            if property_info["deposit"] == "Ask agent":
-                property_info["deposit"] = None  # type: ignore
-
-            else:
-                property_info["deposit"] = int(property_info["deposit"])
-
-            if property_info["min_tenancy"] == "Ask agent":
-                property_info["min_tenancy"] = None
-
-            property_info["bedrooms"] = property_info["bedrooms"].replace("U+0078", "")
-            property_info["bathrooms"] = property_info["bathrooms"].replace(
-                "U+0078", ""
-            )
-            property_info["size"] = property_info["size"].replace(" sq ft", "")
-            # append to properties details when let_available_date is Now
-            if property_info["let_available_date"] in ("Now", "Ask agent"):
-                if property_info["let_available_date"] == "Now":
-                    properties_details.append(property_info)
-            else:
-                if (
-                    # month number of let available date is greater than 5
-                    int(property_info["let_available_date"].split("-")[1])
-                    > 5
-                ):
+            property_info["bedrooms"] = property_info["bedrooms"].replace("x", "")
+            property_info["bathrooms"] = property_info["bathrooms"].replace("x", "")
+            # print(property_info)
+            if property_info["let_available_date"] not in ("Now", "Ask agent"):
+                if datetime.strptime(
+                    property_info["let_available_date"], "%d/%m/%Y"
+                ).month in (6, 7):
                     properties_details.append(property_info)
 
-    warehouse.load_data("property_details", properties_details, replace=True)
+            if stp == 49:
+                context.finish_current_step()
+
+    warehouse.load_data(
+        "property_details",
+        properties_details,
+        schema="rightmove_intermediate",
+        replace=True,
+    )
