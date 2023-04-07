@@ -1,4 +1,3 @@
-from typing import TypedDict, List
 from sayn import task
 from sayn.tasks.task import Task
 from sayn.database import Database
@@ -17,7 +16,7 @@ def extract_property_links(context: Task, warehouse: Database):
     property_links = []
     today = datetime.now()
     context.set_run_steps(
-        [f"Get Property Links for {l['location_name']}" for l in locations]
+        [f"Get Property Links for {loc['location_name']}" for loc in locations]
     )
 
     params = {

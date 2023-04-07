@@ -91,13 +91,14 @@ def extract_property_details(context: Task, warehouse: Database):
                 epc_rating["href"] if epc_rating else None
             )
             property_info["deposit"] = property_info["deposit"].replace(",", "")
-            property_info["bedrooms"] = property_info["bedrooms"].replace("x", "")
-            property_info["bathrooms"] = property_info["bathrooms"].replace("x", "")
-            # print(property_info)
-            if property_info["let_available_date"] not in ("Now", "Ask agent"):
-                if datetime.strptime(
-                    property_info["let_available_date"], "%d/%m/%Y"
-                ).month in (6, 7):
+            property_info["bedrooms"] = property_info["bedrooms"].replace("U+00D7", "")
+            property_info["bathrooms"] = property_info["bathrooms"].replace(
+                "U+00D7", ""
+            )
+            if property_info["let_available_date"] == "Now":
+                properties_details.append(property_info)
+            elif property_info["let_available_date"] not in ("Ask agent"):
+                if int(property_info["let_available_date"].split("/")[1]) in (6, 7):
                     properties_details.append(property_info)
 
             if stp == 49:
