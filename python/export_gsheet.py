@@ -18,7 +18,7 @@ def extract_gsheet(
     with context.step("Config"):
         if not (service_account_info := gsheets.get("service_account")):
             credentials, _ = google.auth.default(
-                scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"]
+                scopes=["https://www.googleapis.com/auth/spreadsheets"]
             )
         else:
             credentials = service_account.Credentials.from_service_account_info(
