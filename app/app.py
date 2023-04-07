@@ -48,14 +48,14 @@ app.layout = html.Div(
                     [
                         html.H1("Rightmove Property Scraper"),
                         html.Hr(),
-                        # dbc.Table.from_dataframe(
-                        #     df,
-                        #     striped=True,
-                        #     bordered=True,
-                        #     hover=True,
-                        #     style={"width": "100%"},
-                        #     responsive=True,
-                        # ),
+                        dbc.Table.from_dataframe(
+                            df,
+                            striped=True,
+                            bordered=True,
+                            hover=True,
+                            style={"width": "100%"},
+                            responsive=True,
+                        ),
                     ],
                     md=12,
                 ),
