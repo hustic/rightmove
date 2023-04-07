@@ -23,12 +23,6 @@ presets:
 
 # these groups define the tasks that will be picked up by SAYN
 groups:
-  models:
-    type: autosql
-    file_name: "*.sql"
-    materialisation: table
-    destination:
-      table: "{{ task.name }}"
 
   properties:
     preset: crawl

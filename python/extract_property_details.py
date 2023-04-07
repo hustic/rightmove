@@ -63,7 +63,12 @@ def extract_property_details(context: Task, warehouse: Database):
             property_info["property_url"] = BASE_URL[:-1] + property_url
             property_info["location_name"] = _property["location_name"]
 
-            property_response = client.get(property_url)
+            try:
+                property_response = client.get(property_url)
+            except Exception as e:
+                context.info(e)
+                continue
+
             property_soup = BeautifulSoup(property_response.text, "html.parser")
             rent_pcm = (
                 property_soup.select_one("div._1gfnqJ3Vtd1z40MlC0MzXu span")
