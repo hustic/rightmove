@@ -1,0 +1,51 @@
+# Ignore logs and temporary files
+*.log
+*.tmp
+*.swp
+
+# Ignore version control directories
+.git
+.gitignore
+.svn
+
+# Ignore build and distribution directories
+dist
+node_modules
+bower_components
+target
+build
+.out
+bin
+.cache
+*.pyc
+*.pyo
+
+# Ignore development and environment files
+.env
+.env.sample
+.env.production
+.env.staging
+.env.development
+.DS_Store
+.vscode
+.editorconfig
+.idea
+*.iml
+*.bak
+*.sublime-project
+*.sublime-workspace
+
+# Ignore test and CI/CD files
+__pycache__
+coverage
+.nyc_output
+*.test.*
+*.spec.*
+test
+tests
+.travis.yml
+.circleci
+.gitlab-ci.yml
+.jenkins
+
+
