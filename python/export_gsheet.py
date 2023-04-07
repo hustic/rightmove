@@ -32,13 +32,12 @@ def extract_gsheet(
                 scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"]
             )
         else:
-            credentials = None
+            credentials = service_account.Credentials.from_service_account_info(
+                service_account_info,
+                scopes=("https://www.googleapis.com/auth/spreadsheets",),
+            )
 
-        gsheet_credentials = service_account.Credentials.from_service_account_info(
-            service_account_info or credentials,
-            scopes=("https://www.googleapis.com/auth/spreadsheets",),
-        )
-        gc = gs.authorize(custom_credentials=gsheet_credentials)
+        gc = gs.authorize(custom_credentials=credentials)
         sh = gc.open_by_key(gsheets["sheets"]["rightmove"]["id"])
 
         wks = sh[1]
