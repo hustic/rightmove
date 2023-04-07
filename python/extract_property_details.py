@@ -79,13 +79,6 @@ def extract_property_details(context: Task, warehouse: Database):
                     .strip()
                 )
                 property_info["rent_pcm"] = int(rent_pcm)
-            rent_pcm = (
-                property_soup.select_one("div._1gfnqJ3Vtd1z40MlC0MzXu span")
-                .text.replace("£", "")
-                .replace("pcm", "")
-                .replace(",", "")
-                .strip()
-            )
             property_info["rent_pcm"] = int(rent_pcm)
             property_detail = property_soup.select("dl._2E1qBJkWUYMJYHfYJzUb_r div")
             for dl in property_detail:
