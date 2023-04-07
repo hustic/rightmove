@@ -1,5 +1,7 @@
 from typing import Mapping
 from google.oauth2 import service_account
+import google.auth
+from googleapiclient.discovery import build
 from sayn import task
 from sayn.tasks.task import Task
 from sayn.database import Database
@@ -25,8 +27,15 @@ def extract_gsheet(
         # API connection
         # Auth
 
+        if not (service_account_info := gsheets.get("service_account")):
+            credentials, _ = google.auth.default(
+                scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"]
+            )
+        else:
+            credentials = None
+
         gsheet_credentials = service_account.Credentials.from_service_account_info(
-            service_account_info,
+            service_account_info or credentials,
             scopes=("https://www.googleapis.com/auth/spreadsheets",),
         )
         gc = gs.authorize(custom_credentials=gsheet_credentials)
