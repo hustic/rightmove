@@ -95,14 +95,23 @@ def extract_property_details(context: Task, warehouse: Database):
             epc_rating = property_soup.select_one(
                 "div._3BAkOrQAfGZMsQDtC0WdbO._3A8p_O-xNhCM7MwsZ_g0yj a"
             )
-            property_info["epc_rating_url"] = str(
-                epc_rating["href"] if epc_rating else None
-            )
+            property_info["epc_rating_url"] = epc_rating["href"] if epc_rating else ""
+
             property_info["deposit"] = property_info["deposit"].replace(",", "")
-            property_info["bedrooms"] = property_info["bedrooms"].replace("U+00d7", "")
-            property_info["bathrooms"] = property_info["bathrooms"].replace(
-                "U+00d7", ""
+            property_info["bedrooms"] = (
+                property_info["bedrooms"][-1] if property_info["bedrooms"] else ""
             )
+            property_info["bathrooms"] = (
+                property_info["bathrooms"][-1] if property_info["bathrooms"] else ""
+            )
+
+            if property_info["size"]:
+                property_info["size"] = property_info["size"].split(" ")[0]
+                property_info["size"] = int(property_info["size"].replace(",", ""))
+                property_info["size"] = property_info["size"] * 0.092903
+            else:
+                property_info["size"] = ""
+
             if property_info["let_available_date"] == "Now":
                 properties_details.append(property_info)
             elif property_info["let_available_date"] not in ("Ask agent"):
