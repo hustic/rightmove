@@ -36,7 +36,9 @@ def extract_gsheet(
 
         df_old = wks.get_as_df()
 
-        df_final = df_old.merge(df_new, on=["property_id"], how="left")
+        df_final = pd.concat([df_old, df_new], ignore_index=True).drop_duplicates(
+            subset="property_id"
+        )
 
         wks.clear()
 
