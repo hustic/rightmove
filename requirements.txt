@@ -1,3 +1,7 @@
 sayn
 sqlalchemy-bigquery
 beautifulsoup4
+pandas
+google-api-python-client
+pygsheets
+pytz
