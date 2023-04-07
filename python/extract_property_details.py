@@ -70,8 +70,7 @@ def extract_property_details(context: Task, warehouse: Database):
                 continue
 
             property_soup = BeautifulSoup(property_response.text, "html.parser")
-            rent = property_soup.select_one("div._1gfnqJ3Vtd1z40MlC0MzXu span")
-            if rent:
+            if rent := property_soup.select_one("div._1gfnqJ3Vtd1z40MlC0MzXu span"):
                 rent_pcm = (
                     rent.text.replace("£", "")
                     .replace("pcm", "")
@@ -79,17 +78,19 @@ def extract_property_details(context: Task, warehouse: Database):
                     .strip()
                 )
                 property_info["rent_pcm"] = int(rent_pcm)
-            property_info["rent_pcm"] = int(rent_pcm)
-            property_detail = property_soup.select("dl._2E1qBJkWUYMJYHfYJzUb_r div")
-            for dl in property_detail:
-                property_info[format_field_name(dl.dt.string)] = str(
-                    dl.dd.string
-                    or dl.dd.span.next_sibling
-                    or dl.dd.span.previous_sibling
-                )
-            property_type = property_soup.select("div._4hBezflLdgDMdFtURKTWh dl")
-            for dl in property_type:
-                property_info[format_field_name(dl.dt.string)] = str(dl.dd.string)
+
+            if property_detail := property_soup.select(
+                "dl._2E1qBJkWUYMJYHfYJzUb_r div"
+            ):
+                for dl in property_detail:
+                    property_info[format_field_name(dl.dt.string)] = str(
+                        dl.dd.string
+                        or dl.dd.span.next_sibling
+                        or dl.dd.span.previous_sibling
+                    )
+            if property_type := property_soup.select("div._4hBezflLdgDMdFtURKTWh dl"):
+                for dl in property_type:
+                    property_info[format_field_name(dl.dt.string)] = str(dl.dd.string)
 
             epc_rating = property_soup.select_one(
                 "div._3BAkOrQAfGZMsQDtC0WdbO._3A8p_O-xNhCM7MwsZ_g0yj a"
@@ -98,9 +99,9 @@ def extract_property_details(context: Task, warehouse: Database):
                 epc_rating["href"] if epc_rating else None
             )
             property_info["deposit"] = property_info["deposit"].replace(",", "")
-            property_info["bedrooms"] = property_info["bedrooms"].replace("U+00D7", "")
+            property_info["bedrooms"] = property_info["bedrooms"].replace("U+00d7", "")
             property_info["bathrooms"] = property_info["bathrooms"].replace(
-                "U+00D7", ""
+                "U+00d7", ""
             )
             if property_info["let_available_date"] == "Now":
                 properties_details.append(property_info)
