@@ -19,24 +19,24 @@ def extract_locations(
 ):
     with context.step("Config"):
         # Gsheet information
-        gsheet_info = gsheets["sheets"]['rightmove']
+        gsheet_info = gsheets["sheets"]["rightmove"]
         sheet_id = gsheet_info["id"]
         sheet_name = gsheet_info["sheet_name"]
 
-        service_account_info = gsheets["service_account"]
-        credentials, _ = google.auth.default(
-            scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"]
-        )
-        gsheets_api = build("sheets", "v4", credentials=credentials)
+        if not (service_account_info := gsheets.get("service_account")):
+            credentials, _ = google.auth.default(
+                scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"]
+            )
+        else:
+            credentials = service_account.Credentials.from_service_account_info(
+                service_account_info or credentials,
+                scopes=("https://www.googleapis.com/auth/spreadsheets.readonly",),
+            )
 
     with context.step("Get Gsheets data"):
         # API connection
         # Auth
-        gsheet_credentials = service_account.Credentials.from_service_account_info(
-            service_account_info,
-            scopes=("https://www.googleapis.com/auth/spreadsheets.readonly",),
-        )
-        gsheets_api = build("sheets", "v4", credentials=gsheet_credentials)
+        gsheets_api = build("sheets", "v4", credentials=credentials)
         # Get data
         res = (
             gsheets_api.spreadsheets()
