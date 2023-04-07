@@ -19,7 +19,7 @@ def extract_gsheet(
     with context.step("Get data"):
         src_table = context.src("intermediate.property_details")
         values = warehouse.read_data(f"SELECT * FROM {src_table}")
-        df = pd.DataFrame(values).drop_duplicates(subset="property_id")
+        df_new = pd.DataFrame(values).drop_duplicates(subset="property_id")
 
     with context.step("Get Gsheets data"):
         # API connection
@@ -30,8 +30,14 @@ def extract_gsheet(
             scopes=("https://www.googleapis.com/auth/spreadsheets",),
         )
         gc = gs.authorize(custom_credentials=gsheet_credentials)
-        sh = gc.open_by_key("15lFBaIpoPkGeWjp3nHhxdKt11gqfI2xqN3v42DCtmFA")
+        sh = gc.open_by_key(gsheets["sheets"]["rightmove"]["id"])
 
         wks = sh[1]
 
-        wks.set_dataframe(df, (1, 1))
+        df_old = wks.get_as_df()
+
+        df_final = df_old.merge(df_new, on=["property_id"], how="left")
+
+        wks.clear()
+
+        wks.set_dataframe(df_final, (1, 1))
