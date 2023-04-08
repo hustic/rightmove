@@ -90,6 +90,7 @@ for row in range(ROWS):
                                 dbc.Button(
                                     "Go to property",
                                     href=df["property_url"][idx],
+                                    target="_blank",
                                     color="primary",
                                 ),
                             ]
