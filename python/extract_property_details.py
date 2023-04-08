@@ -24,6 +24,9 @@ template = {
     "bathrooms": "",
     "size": "",
     "epc_rating_url": "",
+    "title": "",
+    "image": "",
+    "description": "",
     "date_added": datetime.today(),
 }
 
@@ -62,6 +65,9 @@ def extract_property_details(context: Task, warehouse: Database):
             property_info["property_id"] = _property["property_id"]
             property_info["property_url"] = BASE_URL[:-1] + property_url
             property_info["location_name"] = _property["location_name"]
+            property_info["image"] = _property["image"]
+            property_info["title"] = _property["title"]
+            property_info["description"] = _property["description"]
 
             try:
                 property_response = client.get(property_url)
@@ -125,5 +131,4 @@ def extract_property_details(context: Task, warehouse: Database):
         "property_details",
         properties_details,
         schema="rightmove_intermediate",
-        replace=True,
     )
