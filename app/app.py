@@ -47,7 +47,7 @@ rows = []
 for row in range(ROWS):
     _row = []
     for col in range(COLS):
-        idx = row * 4 + col
+        idx = row * COLS + col
         if idx > N_PROPS - 1:
             break
         _col = dbc.Col(
