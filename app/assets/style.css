@@ -1,0 +1,24 @@
+.card-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;  
+    overflow: hidden;
+}
+
+.card-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.card-img-top {
+    height: 190px;
+}
+
+.property-details {
+    display: flex;
+    align-items: center;
+}
+
+.property-details span {
+    margin-right:0.5rem;
+}
