@@ -33,7 +33,8 @@ def data_access() -> DataAccess:
 
 
 df = data_access().get_dataframe(table_id="f_properties")
-df = df.sort_values(by="rent_pcm", ascending=False)
+mask = df["is_hidden"] == 0
+df = df[mask].sort_values(by="rent_pcm", ascending=False)
 
 
 def make_card(
