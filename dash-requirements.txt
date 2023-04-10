@@ -4,4 +4,4 @@ google-auth
 pygsheets
 pandas
 db-dtypes
-google-api-python-client
+google-cloud-bigquery
