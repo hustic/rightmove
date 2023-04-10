@@ -1,12 +1,13 @@
 import logging
-import dash_bootstrap_components as dbc
-from dash import Dash, html, Input, Output, MATCH, ctx, no_update, State
-from dash.exceptions import PreventUpdate
 import os
 from functools import lru_cache
-import pandas as pd
-from .data_access import DataAccess
 
+import dash_bootstrap_components as dbc
+import pandas as pd
+from dash import MATCH, Dash, Input, Output, State, ctx, html, no_update
+from dash.exceptions import PreventUpdate
+
+from .data_access import DataAccess
 
 logger = logging.getLogger("gunicorn.error")
 logger.setLevel(logging.DEBUG)
