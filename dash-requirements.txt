@@ -3,3 +3,4 @@ dash_bootstrap_components
 google-auth
 pygsheets
 pandas
+db-dtypes
