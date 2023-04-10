@@ -22,3 +22,13 @@
 .property-details span {
     margin-right:0.5rem;
 }
+
+.property-card-button {
+    text-decoration: none;
+    margin-right: 5%;
+}
+
+a:hover {
+    cursor:pointer;
+   }
+
