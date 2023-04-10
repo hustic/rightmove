@@ -5,6 +5,9 @@ from bs4 import BeautifulSoup
 from sayn import task
 from sayn.database import Database
 from sayn.tasks.task import Task
+
+import pandas as pd
+
 from .utils import format_field_name
 
 BASE_URL = "https://www.rightmove.co.uk/"
@@ -31,7 +34,7 @@ template = {
 }
 
 
-@task(sources="raw.property_links", outputs="raw.property_details")
+@task(sources="raw.property_links", outputs="intermediate.property_details")
 def extract_property_details(context: Task, warehouse: Database):
     src_table = context.src("raw.property_links")
     properties = warehouse.read_data(
@@ -132,3 +135,74 @@ def extract_property_details(context: Task, warehouse: Database):
         properties_details,
         schema="rightmove_intermediate",
     )
+
+
+@task(sources="raw.property_details", outputs="models.f_properties")
+def extract_property_facts(
+    context: Task,
+    warehouse: Database,
+):
+    with context.step("Check if table exists:"):
+        out_table = context.out("models.f_properties")
+        # check if table exists
+        warehouse.execute(
+            f"""CREATE TABLE IF NOT EXISTS `{out_table}` (
+                property_id	        STRING,
+                property_url	    STRING,				
+                location_name	    STRING,				
+                rent_pcm	        INTEGER,	
+                let_available_date	STRING,			
+                deposit	            STRING,
+                min_tenancy	        STRING,			
+                let_type	        STRING,			
+                furnish_type	    STRING,				
+                property_type	    STRING,				
+                bedrooms	        STRING,
+                bathrooms	        STRING,			
+                size	            STRING,
+                epc_rating_url	    STRING,				
+                title	            STRING,
+                image	            STRING,		
+                description	        STRING,			
+                date_added	        TIMESTAMP,
+                is_favourite        INTEGER,
+                is_hidden           INTEGER	
+            );
+            """
+        )
+
+    with context.step("Merge new Properties"):
+        src_table = context.src("intermediate.property_details")
+        values = warehouse.read_data(f"SELECT * FROM {src_table}")
+        df_new = pd.DataFrame(values).drop_duplicates(subset="property_id")
+
+        df_old = pd.DataFrame(warehouse.read_data(f"SELECT * FROM {out_table}"))
+        df_new["is_favourite"] = 0
+        df_new["is_hidden"] = 0
+
+        df_final = pd.concat([df_old, df_new], ignore_index=True).drop_duplicates(
+            subset="property_id"
+        )
+
+        df_final["date_added"] = (
+            df_final["date_added"].apply((lambda x: x.to_pydatetime())).astype(str)
+        )
+
+        output = df_final.to_dict("records")
+
+        for o in output:
+            o["date_added"] = datetime.strptime(
+                o["date_added"], "%Y-%m-%d %H:%M:%S.%f%z"
+            )
+
+    with context.step("Load Database"):
+        t_name = out_table.split(".")[1]
+        s_name = out_table.split(".")[0]
+        warehouse.load_data(
+            t_name,
+            output,
+            schema=s_name,
+            replace=True,
+        )
+
+    return context.success()
