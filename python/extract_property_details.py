@@ -137,7 +137,7 @@ def extract_property_details(context: Task, warehouse: Database):
     )
 
 
-@task(sources="raw.property_details", outputs="models.f_properties")
+@task(sources="intermediate.property_details", outputs="models.f_properties")
 def extract_property_facts(
     context: Task,
     warehouse: Database,
