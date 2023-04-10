@@ -7,7 +7,7 @@ import pandas as pd
 from dash import MATCH, Dash, Input, Output, State, ctx, html, no_update
 from dash.exceptions import PreventUpdate
 
-from data_access import DataAccess
+from .data_access import DataAccess
 
 logger = logging.getLogger("gunicorn.error")
 logger.setLevel(logging.DEBUG)
@@ -32,9 +32,11 @@ def data_access() -> DataAccess:
     )
 
 
-df = data_access().get_dataframe(table_id="f_properties")
-mask = df["is_hidden"] == 0
-df = df[mask].sort_values(by="rent_pcm", ascending=False)
+def get_dataframe():
+    df = data_access().get_dataframe(table_id="f_properties")
+    mask = df["is_hidden"] == 0
+    df = df[mask]
+    return df
 
 
 def make_card(
@@ -50,13 +52,10 @@ def make_card(
     property_url: str,
     is_favourite: int,
 ):
-    style = (
-        {
-            "font-variation-settings": "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 40",
-            "color": "pink",
-        }
+    class_name = (
+        "material-symbols-outlined fav"
         if is_favourite == 1
-        else None
+        else "material-symbols-outlined"
     )
 
     card = dbc.Card(
@@ -105,13 +104,12 @@ def make_card(
                             html.A(
                                 html.Span(
                                     "favorite",
-                                    className="material-symbols-outlined",
+                                    className=class_name,
                                     id={"type": "favourite-icon", "index": idx},
                                 ),
                                 href=None,
                                 id={"type": "favourite-btn", "index": idx},
                                 className="property-card-button",
-                                style=style,
                             ),
                             html.A(
                                 html.Span(
@@ -168,30 +166,34 @@ def make_grid(df: pd.DataFrame, col_per_row: int = 5):
     return rows
 
 
-app.layout = html.Div(
-    [
-        html.H1("Properties"),
-        html.Hr(),
-        dbc.Row(make_grid(df, col_per_row=6)),
-    ],
-    # add 5% padding to left-right 2% padding to top-bottom
-    style={"padding": "2% 5%"},
-)
+def serve_layout():
+    return html.Div(
+        [
+            html.H1("Properties"),
+            html.Hr(),
+            dbc.Row(make_grid(get_dataframe(), col_per_row=6)),
+        ],
+        # add 5% padding to left-right 2% padding to top-bottom
+        style={"padding": "2% 5%"},
+    )
+
+
+app.layout = serve_layout
 
 # write callback function to fill favourite-btn when clicked
 
 
 @app.callback(
-    Output({"type": "favourite-icon", "index": MATCH}, "style"),
+    Output({"type": "favourite-icon", "index": MATCH}, "className"),
     Input({"type": "favourite-btn", "index": MATCH}, "n_clicks"),
-    State({"type": "favourite-icon", "index": MATCH}, "style"),
+    State({"type": "favourite-icon", "index": MATCH}, "className"),
     prevent_initial_call=True,
 )
-def favourite_property(n_clicks, style):
+def favourite_property(n_clicks, className):
     if n_clicks is None:
         raise PreventUpdate
     else:
-        if style:
+        if className.endswith("fav"):
             result = data_access().update_item(
                 table_id="f_properties",
                 property_id=ctx.triggered_id["index"],
@@ -199,10 +201,7 @@ def favourite_property(n_clicks, style):
                 value="0",
             )
             if result:
-                return {
-                    "font-variation-settings": "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 40",
-                    "color": "#0d6efd",
-                }
+                return "material-symbols-outlined"
             else:
                 return no_update
         else:
@@ -213,10 +212,7 @@ def favourite_property(n_clicks, style):
                 value="1",
             )
             if result:
-                return {
-                    "font-variation-settings": "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 40",
-                    "color": "pink",
-                }
+                return "material-symbols-outlined fav"
             else:
                 return no_update
 
