@@ -7,7 +7,7 @@ import pandas as pd
 from dash import MATCH, Dash, Input, Output, State, ctx, dcc, html, no_update
 from dash.exceptions import PreventUpdate
 
-from .data_access import DataAccess
+from data_access import DataAccess
 
 logger = logging.getLogger("gunicorn.error")
 logger.setLevel(logging.DEBUG)
