@@ -234,7 +234,7 @@ app.layout = serve_layout
     State("data-store", "data"),
 )
 def update_property_grid(location_name, sort_change, data):
-    df = pd.DataFrame(data)
+    df = pd.DataFrame(data).query("is_favourite == 0")
     if location_name is not None:
         df = df[df["location_name"] == location_name]
 
