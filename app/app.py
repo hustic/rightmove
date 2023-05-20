@@ -4,10 +4,10 @@ from functools import lru_cache
 
 import dash_bootstrap_components as dbc
 import pandas as pd
-from dash import MATCH, Dash, Input, Output, State, ctx, html, no_update
+from dash import MATCH, Dash, Input, Output, State, ctx, dcc, html, no_update
 from dash.exceptions import PreventUpdate
 
-from data_access import DataAccess
+from .data_access import DataAccess
 
 logger = logging.getLogger("gunicorn.error")
 logger.setLevel(logging.DEBUG)
@@ -32,11 +32,34 @@ def data_access() -> DataAccess:
     )
 
 
+# @lru_cache
 def get_dataframe():
     df = data_access().get_dataframe(table_id="f_properties")
     mask = df["is_hidden"] == 0
     df = df[mask]
+    print("--------Force reload--------")
     return df
+
+
+def make_dropdown():
+    df = get_dataframe()
+    options = [{"label": x, "value": x} for x in df["location_name"].unique()]
+    return dbc.Select(options=options, id="location-dropdown", class_name="mb-2")
+
+
+def make_sort_by():
+    return dbc.Select(
+        options=[
+            {"label": "Price (Low to High)", "value": "rent_pcm"},
+            {"label": "Price (High to Low)", "value": "-rent_pcm"},
+            {"label": "Bedrooms (Low to High)", "value": "bedrooms"},
+            {"label": "Bedrooms (High to Low)", "value": "-bedrooms"},
+            {"label": "Bathrooms (Low to High)", "value": "bathrooms"},
+            {"label": "Bathrooms (High to Low)", "value": "-bathrooms"},
+        ],
+        id="sort-by-dropdown",
+        class_name="mb-2",
+    )
 
 
 def make_card(
@@ -167,11 +190,34 @@ def make_grid(df: pd.DataFrame, col_per_row: int = 5):
 
 
 def serve_layout():
+    df = get_dataframe()
     return html.Div(
         [
+            dcc.Store(id="data-store", data=df.to_dict("records")),
+            dcc.Store(id="filtered-data-store", data={}),
             html.H1("Properties"),
             html.Hr(),
-            dbc.Row(make_grid(get_dataframe(), col_per_row=6)),
+            dbc.Accordion(
+                [
+                    dbc.AccordionItem(
+                        [
+                            dbc.Row(
+                                make_grid(
+                                    df=df[df["is_favourite"].astype(bool)],
+                                    col_per_row=6,
+                                ),
+                                id="favourite-grid",
+                            )
+                        ],
+                        title="Favorites",
+                    )
+                ],
+                class_name="mb-2",
+            ),
+            dbc.Row(
+                [dbc.Col(make_dropdown(), width=2), dbc.Col(make_sort_by(), width=2)]
+            ),
+            dbc.Row(id="property-grid"),
         ],
         # add 5% padding to left-right 2% padding to top-bottom
         style={"padding": "2% 5%"},
@@ -180,7 +226,26 @@ def serve_layout():
 
 app.layout = serve_layout
 
-# write callback function to fill favourite-btn when clicked
+
+@app.callback(
+    Output("property-grid", "children"),
+    Input("location-dropdown", "value"),
+    Input("sort-by-dropdown", "value"),
+    State("data-store", "data"),
+)
+def update_property_grid(location_name, sort_change, data):
+    df = pd.DataFrame(data)
+    if location_name is not None:
+        df = df[df["location_name"] == location_name]
+
+    if sort_change is not None:
+        if sort_change[0] == "-":
+            sort_change = sort_change[1:]
+            df = df.sort_values(by=sort_change, ascending=False)
+        else:
+            df = df.sort_values(by=sort_change)
+
+    return make_grid(df, col_per_row=6)
 
 
 @app.callback(
