@@ -51,3 +51,13 @@ a:hover {
 .material-symbols-outlined.fav {
     color: #dd4976;
 }
+
+.accordion-button {
+    background-color: transparent;
+    color: black;
+}
+
+.accordion-button:not(.collapsed) {
+    background-color: transparent;
+    color: black;
+}
