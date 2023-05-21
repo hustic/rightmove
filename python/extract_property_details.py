@@ -79,6 +79,7 @@ def extract_property_details(context: Task, warehouse: Database):
                 continue
 
             property_soup = BeautifulSoup(property_response.text, "html.parser")
+
             if rent := property_soup.select_one("div._1gfnqJ3Vtd1z40MlC0MzXu span"):
                 rent_pcm = (
                     rent.text.replace("£", "")
@@ -121,11 +122,14 @@ def extract_property_details(context: Task, warehouse: Database):
             else:
                 property_info["size"] = ""
             property_info = {k: property_info[k] for k in template.keys()}
-            if property_info["let_available_date"] == "Now":
-                properties_details.append(property_info)
-            elif property_info["let_available_date"] not in ("Ask agent"):
-                if int(property_info["let_available_date"].split("/")[1]) in (6, 7):
+            if not property_soup.select(
+                "span.ksc_lozenge.berry._2WqVSGdiq2H4orAZsyHHgz"
+            ):
+                if property_info["let_available_date"] == "Now":
                     properties_details.append(property_info)
+                elif property_info["let_available_date"] not in ("Ask agent"):
+                    if int(property_info["let_available_date"].split("/")[1]) in (6, 7):
+                        properties_details.append(property_info)
 
             if stp == 49:
                 context.finish_current_step()
@@ -134,6 +138,7 @@ def extract_property_details(context: Task, warehouse: Database):
         "property_details",
         properties_details,
         schema="rightmove_intermediate",
+        replace=True,
     )
 
 
@@ -176,19 +181,19 @@ def extract_property_facts(
         values = warehouse.read_data(f"SELECT * FROM {src_table}")
         df_new = pd.DataFrame(values).drop_duplicates(subset="property_id")
 
-        df_old = pd.DataFrame(warehouse.read_data(f"SELECT * FROM {out_table}"))
-        df_new["is_favourite"] = 0
-        df_new["is_hidden"] = 0
+        df_old = pd.DataFrame(warehouse.read_data(f"SELECT * FROM {out_table}"))[
+            ["property_id", "is_favourite", "is_hidden"]
+        ]
+        df_new = df_new.merge(df_old, on="property_id", how="left")
+        df_new[["is_favourite", "is_hidden"]] = df_new[
+            ["is_favourite", "is_hidden"]
+        ].fillna(0)
 
-        df_final = pd.concat([df_old, df_new], ignore_index=True).drop_duplicates(
-            subset="property_id"
+        df_new["date_added"] = (
+            df_new["date_added"].apply((lambda x: x.to_pydatetime())).astype(str)
         )
 
-        df_final["date_added"] = (
-            df_final["date_added"].apply((lambda x: x.to_pydatetime())).astype(str)
-        )
-
-        output = df_final.to_dict("records")
+        output = df_new.to_dict("records")
 
         for o in output:
             o["date_added"] = datetime.strptime(
