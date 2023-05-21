@@ -120,7 +120,7 @@ def extract_property_details(context: Task, warehouse: Database):
                 property_info["size"] = property_info["size"] * 0.092903
             else:
                 property_info["size"] = ""
-
+            property_info = {k: property_info[k] for k in template.keys()}
             if property_info["let_available_date"] == "Now":
                 properties_details.append(property_info)
             elif property_info["let_available_date"] not in ("Ask agent"):
@@ -163,7 +163,7 @@ def extract_property_facts(
                 epc_rating_url	    STRING,				
                 title	            STRING,
                 image	            STRING,		
-                description	        STRING,			
+                description	        STRING,	
                 date_added	        TIMESTAMP,
                 is_favourite        INTEGER,
                 is_hidden           INTEGER	
