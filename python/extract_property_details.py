@@ -117,7 +117,7 @@ def extract_property_details(context: Task, warehouse: Database):
 
             if property_info["size"]:
                 property_info["size"] = property_info["size"].split(" ")[0]
-                property_info["size"] = int(property_info["size"].replace(",", ""))
+                property_info["size"] = int(property_info["size"].replace(",", "").replace("-",""))
                 property_info["size"] = property_info["size"] * 0.092903
             else:
                 property_info["size"] = ""
