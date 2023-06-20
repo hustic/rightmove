@@ -125,9 +125,9 @@ def extract_property_details(context: Task, warehouse: Database):
             if not property_soup.select(
                 "span.ksc_lozenge.berry._2WqVSGdiq2H4orAZsyHHgz"
             ):
-                if property_info["let_available_date"] == "Now":
+                if property_info["let_available_date"] in ("Now", "Ask agent"):
                     properties_details.append(property_info)
-                elif property_info["let_available_date"] not in ("Ask agent"):
+                else:
                     if int(property_info["let_available_date"].split("/")[1]) in (6, 7):
                         properties_details.append(property_info)
 
