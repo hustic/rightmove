@@ -22,7 +22,7 @@ def extract_property_links(context: Task, warehouse: Database):
 
     params = {
         "searchType": "RENT",
-        "maxPrice": 2000,
+        "maxPrice": 2500,
         "minBedrooms": 2,
         "includeLetAgreed": "false",
     }
