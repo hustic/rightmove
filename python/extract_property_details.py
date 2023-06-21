@@ -128,7 +128,10 @@ def extract_property_details(context: Task, warehouse: Database):
                 if property_info["let_available_date"] in ("Now", "Ask agent"):
                     properties_details.append(property_info)
                 else:
-                    if int(property_info["let_available_date"].split("/")[1]) in (6, 7):
+                    try:
+                        if int(property_info["let_available_date"].split("/")[1]) in (6, 7):
+                            properties_details.append(property_info)
+                    except:
                         properties_details.append(property_info)
 
             if stp == 49:
