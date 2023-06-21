@@ -132,7 +132,7 @@ def extract_property_details(context: Task, warehouse: Database):
                         if int(property_info["let_available_date"].split("/")[1]) in (6, 7):
                             properties_details.append(property_info)
                     except:
-                        properties_details.append(property_info)
+                        context.info(f'Found something weird {property_info["let_available_date"]}')
 
             if stp == 49:
                 context.finish_current_step()
